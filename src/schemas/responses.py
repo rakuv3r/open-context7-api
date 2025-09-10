@@ -75,6 +75,7 @@ class LibrarySearchItem(BaseModel):
     total_tokens: int = 0
     tags: list[str] = Field(default_factory=list)
     score: float | None = None
+    library_type: str = Field("git", description="Library creation type: git or api")
 
 
 class LibraryDetail(BaseModel):
@@ -103,6 +104,14 @@ class LibraryDetail(BaseModel):
             Used to detect when updates are needed.
         tags: List of tags assigned to categorize the library.
             Used for filtering and organizing libraries.
+        title: Display title for the library.
+            Can be empty if not set by user.
+        description: Optional description of the library.
+            Explains what the library contains or does.
+        last_update_date: When the library was last updated.
+            ISO format date string, empty if never updated.
+        total_tokens: Total number of tokens in all documents.
+            Used for billing and storage tracking.
     """
 
     model_config = {
@@ -110,7 +119,9 @@ class LibraryDetail(BaseModel):
         "extra": "ignore",
     }
 
-    library_id: str = Field(..., description="Unique identifier for the library")
+    library_id: str = Field(
+        ..., alias="libraryID", description="Unique identifier for the library"
+    )
     status: str = Field(
         ..., alias="state", description="Current processing status of the library"
     )
@@ -141,4 +152,13 @@ class LibraryDetail(BaseModel):
     tags: list[str] = Field(
         default_factory=list,
         description="List of tags assigned to categorize the library",
+    )
+
+    # Additional metadata from LibrarySearchItem
+    title: str = Field("", description="Display title for the library")
+    description: str = Field("", description="Optional description of the library")
+    last_update_date: str = Field("", description="When the library was last updated")
+    total_tokens: int = Field(0, description="Total number of tokens in all documents")
+    library_type: str = Field(
+        "git", alias="libraryType", description="Library creation type: git or api"
     )

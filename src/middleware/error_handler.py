@@ -11,6 +11,7 @@ from fastapi.responses import ORJSONResponse
 from loguru import logger
 
 from src.core.config import settings
+from src.core.constants import RETCODE_INTERNAL_ERROR
 from src.core.errors import AppError
 from src.core.errors import IgnoredError
 from src.utils.response import error_response
@@ -35,10 +36,12 @@ async def error_handler_middleware(
         request_id = get_request_id(request)
         logger.error(f"[{request_id}] {e.__class__.__name__}: {e.message}")
 
-        response_data = error_response(message=e.message, request=request)
+        response_data = error_response(
+            message=e.message, retcode=e.retcode, request=request
+        )
 
         return ORJSONResponse(
-            status_code=e.status_code, content=response_data.model_dump()
+            status_code=status.HTTP_200_OK, content=response_data.model_dump()
         )
     except Exception as e:
         request_id = get_request_id(request)
@@ -49,15 +52,17 @@ async def error_handler_middleware(
 
         # Handle app errors vs Python errors
         if isinstance(e, AppError):
-            # App errors have message and status code
+            # App errors have message and retcode
             message = e.message
-            status_code = e.status_code
+            retcode = e.retcode
         else:
             # Python errors - only message available
             message = str(e)
-            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+            retcode = RETCODE_INTERNAL_ERROR
 
-        response_data = error_response(message=message, request=request)
+        response_data = error_response(
+            message=message, retcode=retcode, request=request
+        )
         return ORJSONResponse(
-            status_code=status_code, content=response_data.model_dump()
+            status_code=status.HTTP_200_OK, content=response_data.model_dump()
         )

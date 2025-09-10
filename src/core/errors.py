@@ -2,6 +2,14 @@
 
 from fastapi import status
 
+from src.core.constants import RETCODE_CHAT_SERVICE_ERROR
+from src.core.constants import RETCODE_CONFIGURATION_ERROR
+from src.core.constants import RETCODE_EMBEDDING_SERVICE_ERROR
+from src.core.constants import RETCODE_INTERNAL_ERROR
+from src.core.constants import RETCODE_RESOURCE_ALREADY_EXISTS
+from src.core.constants import RETCODE_RESOURCE_NOT_FOUND
+from src.core.constants import RETCODE_VALIDATION_ERROR
+
 
 class AppError(Exception):
     """Base application error."""
@@ -9,15 +17,18 @@ class AppError(Exception):
     def __init__(
         self,
         message: str,
+        retcode: int = RETCODE_INTERNAL_ERROR,
         status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR,
     ):
         """Initialize application error.
 
         Args:
             message: Error message.
+            retcode: Return code for API response.
             status_code: HTTP status code.
         """
         self.message = message
+        self.retcode = retcode
         self.status_code = status_code
         super().__init__(self.message)
 
@@ -28,15 +39,17 @@ class IgnoredError(AppError):
     def __init__(
         self,
         message: str,
-        status_code: int = status.HTTP_400_BAD_REQUEST,
+        retcode: int,
+        status_code: int = status.HTTP_200_OK,
     ):
         """Initialize ignored error.
 
         Args:
             message: Error message.
+            retcode: Return code for API response.
             status_code: HTTP status code.
         """
-        super().__init__(message, status_code)
+        super().__init__(message, retcode, status_code)
 
 
 # Business errors - expected and don't need monitoring
@@ -49,7 +62,7 @@ class ValidationError(IgnoredError):
         Args:
             message: Validation error message.
         """
-        super().__init__(message, status.HTTP_422_UNPROCESSABLE_ENTITY)
+        super().__init__(message, RETCODE_VALIDATION_ERROR)
 
 
 class ResourceNotFoundError(IgnoredError):
@@ -61,7 +74,7 @@ class ResourceNotFoundError(IgnoredError):
         Args:
             message: Resource not found message.
         """
-        super().__init__(message, status.HTTP_404_NOT_FOUND)
+        super().__init__(message, RETCODE_RESOURCE_NOT_FOUND)
 
 
 class ResourceAlreadyExistsError(IgnoredError):
@@ -73,7 +86,7 @@ class ResourceAlreadyExistsError(IgnoredError):
         Args:
             message: Resource exists message.
         """
-        super().__init__(message, status.HTTP_409_CONFLICT)
+        super().__init__(message, RETCODE_RESOURCE_ALREADY_EXISTS)
 
 
 # System errors - unexpected and need monitoring
@@ -86,7 +99,9 @@ class ConfigurationError(AppError):
         Args:
             message: Configuration error message.
         """
-        super().__init__(message, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        super().__init__(
+            message, RETCODE_CONFIGURATION_ERROR, status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 class ChatServiceError(AppError):
@@ -98,7 +113,9 @@ class ChatServiceError(AppError):
         Args:
             message: Chat service error message.
         """
-        super().__init__(message, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        super().__init__(
+            message, RETCODE_CHAT_SERVICE_ERROR, status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 class EmbeddingServiceError(AppError):
@@ -110,4 +127,8 @@ class EmbeddingServiceError(AppError):
         Args:
             message: Embedding service error message.
         """
-        super().__init__(message, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        super().__init__(
+            message,
+            RETCODE_EMBEDDING_SERVICE_ERROR,
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )

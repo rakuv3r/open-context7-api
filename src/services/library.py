@@ -12,6 +12,7 @@ from src.adapters.gitlab import GitLabAdapter
 from src.core.constants import DEFAULT_LIBRARY_TAG
 from src.core.constants import QDRANT_LIBRARIES_COLLECTION_NAME
 from src.core.enums import LibraryStatus
+from src.core.enums import LibraryType
 from src.core.errors import ResourceNotFoundError
 from src.core.errors import ValidationError
 from src.schemas.internal import TokenFilterResult
@@ -76,6 +77,7 @@ class LibraryService:
                 library_embedding.embedding,
                 org,
                 project,
+                library_type=LibraryType.API,
             )
 
             # Process files
@@ -134,6 +136,7 @@ class LibraryService:
                 provider.org,
                 provider.project,
                 git_info,
+                LibraryType.GIT,
             )
 
             # Collect and process files

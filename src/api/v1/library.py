@@ -18,6 +18,7 @@ from src.deps import get_service
 from src.schemas.base import BaseResponse
 from src.schemas.requests import ContentRequest
 from src.schemas.requests import RepositoryRequest
+from src.schemas.responses import LibraryDetail
 from src.services.library import LibraryService
 from src.utils.common import parse_repo_url
 from src.utils.response import success_response
@@ -30,7 +31,7 @@ router = APIRouter()
 async def search(
     library_service: Annotated[LibraryService, Depends(get_service)],
     query: str | None = Query(None, description="Search query"),
-    limit: int = Query(35, ge=1, le=100, description="Maximum results"),
+    limit: int = Query(10, ge=1, le=100, description="Maximum results"),
     offset: int = Query(0, ge=0, description="Pagination offset"),
 ):
     """## Search Libraries.
@@ -59,6 +60,7 @@ async def search(
             "state": lib.state,
             "totalTokens": lib.total_tokens,
             "versions": lib.tags,
+            "libraryType": lib.library_type,
         }
         if lib.score is not None:
             result["trustScore"] = lib.score
@@ -294,6 +296,60 @@ async def add_tag(
     background_tasks.add_task(library_service.add_tag, library_id, tag)
 
     return success_response(request=request)
+
+
+@router.get("/{org}/{project}/meta")
+async def get_library_meta(
+    request: Request,
+    library_service: Annotated[LibraryService, Depends(get_service)],
+    library_id: Annotated[str, Depends(get_library_id)],
+) -> BaseResponse[LibraryDetail]:
+    """## Get Library Metadata.
+
+    Get detailed library metadata including status, repository info, and configuration.
+
+    ### Parameters
+    - **org**: Organization name (e.g., "myorg")
+    - **project**: Project name (e.g., "myproject")
+
+    ### Returns
+    Complete library metadata and status information.
+
+    ### Success Response
+    ```json
+    {
+        "retcode": 0,
+        "data": {
+            "library_id": "abc123def456...",
+            "status": "completed",
+            "repo_url": "https://gitlab.company.com/myorg/myproject",
+            "access_token": null,
+            "org": "myorg",
+            "project": "myproject",
+            "branch": "main",
+            "last_commit_id": "1a2b3c4d5e6f...",
+            "tags": ["latest", "v1.0", "v2.0"]
+        },
+        "message": "Operation successful",
+        "createdAt": "2025-09-09T12:00:00Z",
+        "requestId": "uuid-1234-5678"
+    }
+    ```
+
+    ### Error Responses
+    - **retcode 1002**: Library not found
+
+    ### Usage Examples
+    ```bash
+    # Get library metadata
+    GET /api/v1/library/myorg/myproject/meta
+
+    # Check processing status
+    GET /api/v1/library/company/docs/meta
+    ```
+    """
+    library_detail = await library_service.get_by_id(library_id)
+    return success_response(data=library_detail, request=request)
 
 
 # Handle both /{org}/{project} and /{org}/{project}/{tag}

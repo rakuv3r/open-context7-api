@@ -20,3 +20,11 @@ class LibraryStatus(str, Enum):
     PROCESSING = "processing"
     FINALIZED = "finalized"
     FAILED = "failed"
+
+
+@unique
+class LibraryType(str, Enum):
+    """Library creation type."""
+
+    GIT = "git"
+    API = "api"

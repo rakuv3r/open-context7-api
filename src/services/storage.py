@@ -18,6 +18,7 @@ from src.core.config import settings
 from src.core.constants import DEFAULT_LIBRARY_TAG
 from src.core.constants import QDRANT_LIBRARIES_COLLECTION_NAME
 from src.core.enums import LibraryStatus
+from src.core.enums import LibraryType
 from src.core.errors import ResourceNotFoundError
 from src.schemas.responses import LibraryDetail
 from src.schemas.responses import LibrarySearchItem
@@ -58,6 +59,7 @@ class Storage:
         org: str,
         project: str,
         git_info: dict[str, Any] | None = None,
+        library_type: LibraryType = LibraryType.GIT,
     ) -> None:
         """Initialize library storage.
 
@@ -69,6 +71,7 @@ class Storage:
             org: Organization name.
             project: Project name.
             git_info: Optional Git repository info dict.
+            library_type: Type of library creation (git or api).
         """
         await self._ensure_index_collection_exists()
 
@@ -81,6 +84,7 @@ class Storage:
             "state": LibraryStatus.PROCESSING,
             "last_update_date": datetime.now().isoformat(),
             "tags": [],
+            "library_type": library_type.value,
         }
 
         if git_info:
